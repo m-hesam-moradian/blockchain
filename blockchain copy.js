@@ -5,17 +5,20 @@ class Blockchain {
   constructor() {
     this.chain = [Block.genesis()];
   }
+
   addBlock({ data }) {
-    const newblock = Block.mineBlock({
+    const newBlock = Block.mineBlock({
       lastBlock: this.chain[this.chain.length - 1],
       data,
     });
-    this.chain.push(newblock);
+    this.chain.push(newBlock);
   }
+
   static isValidChain(chain) {
     if (JSON.stringify(chain[0]) !== JSON.stringify(Block.genesis())) {
       return false;
     }
+
     for (let i = 1; i < chain.length; i++) {
       const block = chain[i];
       const actualLastHash = chain[i - 1].hash;
@@ -25,8 +28,10 @@ class Blockchain {
       if (lastHash !== actualLastHash) return false;
       if (hash !== cryptoHash(timestamp, lastHash, data)) return false;
     }
+
     return true;
   }
+
   replaceChain(chain) {
     if (chain.length <= this.chain.length) {
       console.error("the incoming chain must be longer");
@@ -40,4 +45,5 @@ class Blockchain {
     this.chain = chain;
   }
 }
+
 module.exports = Blockchain;
