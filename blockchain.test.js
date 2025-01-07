@@ -56,34 +56,63 @@ describe("blockchain", () => {
       });
     });
   });
+
   describe("replaceChain()", () => {
-    describe("when the newChain is shorter than mainChain", () => {
-      it("dos'nt replace the chain", () => {
+    let errorMock, logMock;
+
+    beforeEach(() => {
+      errorMock = jest.fn();
+      logMock = jest.fn();
+
+      global.console.error = errorMock;
+      global.console.log = logMock;
+    });
+
+    describe("when the new chain is not longer", () => {
+      beforeEach(() => {
         newChain[0] = { new: "chain" };
         blockchain.replaceChain(newChain.chain);
+      });
+      it("does not replace the chain", () => {
         expect(blockchain.chain).toEqual(originalChain);
       });
+
+      it("logs an error", () => {
+        expect(errorMock).toHaveBeenCalled();
+      });
     });
-    describe("when the newChain is longer than mainChain", () => {
+
+    describe("when the new chain is longer", () => {
       beforeEach(() => {
         newChain.addBlock({ data: "one" });
         newChain.addBlock({ data: "two" });
         newChain.addBlock({ data: "three" });
       });
+
       describe("and the chain is invalid", () => {
-        it("dos'nt replace the chain", () => {
-          newChain.chain[1].hash = "changed-hash";
+        beforeEach(() => {
+          newChain.chain[2].hash = "fake-hash";
           blockchain.replaceChain(newChain.chain);
+        });
+        it("does not replace the chain", () => {
           expect(blockchain.chain).toEqual(originalChain);
+        });
+
+        it("logs an error", () => {
+          expect(errorMock).toHaveBeenCalled();
         });
       });
       describe("and the chain is valid", () => {
-        it("dose replace the chain", () => {
+        beforeEach(() => {
           blockchain.replaceChain(newChain.chain);
-          console.log(blockchain.chain);
-          console.log(newChain.chain);
+        });
 
+        it("does replace the chain", () => {
           expect(blockchain.chain).toEqual(newChain.chain);
+        });
+
+        it("logs an error", () => {
+          expect(logMock).toHaveBeenCalled();
         });
       });
     });
