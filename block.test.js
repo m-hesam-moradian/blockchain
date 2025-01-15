@@ -1,4 +1,5 @@
 // Importing the Block class, GENESIS_DATA, MINE_RATE from config, and the cryptoHash utility for hash generation.
+const hexToBinary = require("hex-to-binary");
 const Block = require("./block");
 const { GENESIS_DATA, MINE_RATE } = require("./config");
 const cryptoHash = require("./crypto-hash");
@@ -89,9 +90,9 @@ describe("Block", () => {
 
     it("sets a `hash` that meets the difficulty criteria", () => {
       // Ensure that the hash of the mined block satisfies the difficulty condition
-      expect(minedBlock.hash.substring(0, minedBlock.difficulty)).toEqual(
-        "0".repeat(minedBlock.difficulty)
-      );
+      expect(
+        hexToBinary(minedBlock.hash).substring(0, minedBlock.difficulty)
+      ).toEqual("0".repeat(minedBlock.difficulty));
     });
 
     it("adjusts the difficulty", () => {

@@ -2,7 +2,7 @@
 const { GENESIS_DATA, MINE_RATE } = require("./config");
 // Importing the cryptoHash utility to generate hashes.
 const cryptoHash = require("./crypto-hash");
-
+const hexToBinary = require("hex-to-binary");
 // Block class representing each block in the blockchain.
 class Block {
   // The constructor defines the properties of a block.
@@ -40,7 +40,9 @@ class Block {
 
       // Generate a hash based on timestamp, last hash, data, nonce, and difficulty.
       hash = cryptoHash(timestamp, lastHash, data, nonce, difficulty);
-    } while (hash.substring(0, difficulty) !== "0".repeat(difficulty)); // Ensure the hash has the required number of leading zeros.
+    } while (
+      hexToBinary(hash).substring(0, difficulty) !== "0".repeat(difficulty)
+    ); // Ensure the hash has the required number of leading zeros.
 
     // Return a new Block instance with the mined values.
     return new this({
