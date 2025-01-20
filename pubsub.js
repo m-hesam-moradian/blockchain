@@ -1,15 +1,19 @@
 const redis = require("redis");
+const Blockchain = require("./blockchain");
 
 const CHANNELS = {
   TEST: "TEST",
+  Blockchain: "Blockchain",
 };
 
 class PubSub {
-  constructor() {
+  constructor({ blockchain }) {
     // Create publisher and subscriber clients
+    this.blockchain = blockchain;
     this.publisher = redis.createClient();
     this.subscriber = redis.createClient();
 
+    this.subscribeToChannels();
     // Connect both clients
     this.init();
   }
@@ -26,23 +30,28 @@ class PubSub {
 
     console.log("PubSub system initialized.");
   }
+  subscribeToChannels() {
+    Object.values(CHANNELS).forEach((channel) => {
+      this.subscriber.subscribe(channel);
+    });
+  }
+
+  publish({ channel, message }) {
+    this.publisher.publish(channel, message);
+  }
+  broadcatChain() {
+    this.publish({
+      channel: CHANNELS.Blockchain,
+      message: JSON.stringify(this.blockchain.channel),
+    });
+  }
 
   handleMessage(channel, message) {
+    const parsedMessage = JSON.parse(message);
+    if (channel === CHANNELS.Blockchain) {
+      this.blockchain.replaceChain(parsedMessage);
+    }
     console.log(`Message received. Channel: ${channel}. Message: ${message}`);
   }
-
-  async publish(channel, message) {
-    // Publish a message to the specified channel
-    await this.publisher.publish(channel, message);
-  }
 }
-
-// Initialize PubSub and send a message after 1 second
-(async () => {
-  const testPubSub = new PubSub();
-
-  // Wait for initialization
-  setTimeout(async () => {
-    await testPubSub.publish(CHANNELS.TEST, "foo");
-  }, 1000);
-})();
+module.exports = PubSub;
