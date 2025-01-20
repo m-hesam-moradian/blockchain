@@ -8,50 +8,60 @@ const CHANNELS = {
 
 class PubSub {
   constructor({ blockchain }) {
-    // Create publisher and subscriber clients
     this.blockchain = blockchain;
     this.publisher = redis.createClient();
     this.subscriber = redis.createClient();
 
-    this.subscribeToChannels();
-    // Connect both clients
     this.init();
   }
 
   async init() {
-    // Connect publisher and subscriber
-    await this.publisher.connect();
-    await this.subscriber.connect();
+    try {
+      await this.publisher.connect();
+      await this.subscriber.connect();
 
-    // Subscribe to the TEST channel
-    await this.subscriber.subscribe(CHANNELS.TEST, (message) => {
-      this.handleMessage(CHANNELS.TEST, message);
-    });
+      this.subscribeToChannels();
 
-    console.log("PubSub system initialized.");
+      console.log("PubSub system initialized.");
+    } catch (error) {
+      console.error("Error initializing PubSub:", error);
+    }
   }
+
   subscribeToChannels() {
-    Object.values(CHANNELS).forEach((channel) => {
-      this.subscriber.subscribe(channel);
+    Object.values(CHANNELS).forEach(async (channel) => {
+      await this.subscriber.subscribe(channel);
+    });
+
+    this.subscriber.on("message", (channel, message) => {
+      this.handleMessage(channel, message);
     });
   }
 
-  publish({ channel, message }) {
-    this.publisher.publish(channel, message);
+  async publish({ channel, message }) {
+    try {
+      await this.publisher.publish(channel, message);
+    } catch (error) {
+      console.error(`Error publishing to channel ${channel}:`, error);
+    }
   }
-  broadcatChain() {
+
+  broadcastChain() {
     this.publish({
       channel: CHANNELS.Blockchain,
-      message: JSON.stringify(this.blockchain.channel),
+      message: JSON.stringify(this.blockchain.chain),
     });
   }
 
   handleMessage(channel, message) {
     const parsedMessage = JSON.parse(message);
+
     if (channel === CHANNELS.Blockchain) {
       this.blockchain.replaceChain(parsedMessage);
     }
+
     console.log(`Message received. Channel: ${channel}. Message: ${message}`);
   }
 }
+
 module.exports = PubSub;
