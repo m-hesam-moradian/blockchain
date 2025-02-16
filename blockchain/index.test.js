@@ -1,18 +1,17 @@
 const Block = require("./block");
-const Blockchain = require("./blockchain");
-const cryptoHash = require("./crypto-hash");
+const Blockchain = require("./index");
+const {cryptoHash} = require('./../util');
 
-describe("blockchain", () => {
-  let blockchain,
-    newChain,
-    originalChain = new Blockchain();
+describe("Blockchain", () => {
+  let blockchain, newChain, originalChain;
+
   beforeEach(() => {
     blockchain = new Blockchain();
     newChain = new Blockchain();
     originalChain = blockchain.chain;
   });
 
-  it("contains a 'chain' array instance", () => {
+  it("contains a `chain` Array instance", () => {
     expect(blockchain.chain instanceof Array).toBe(true);
   });
   it("starts with the genesis block", () => {
@@ -23,65 +22,69 @@ describe("blockchain", () => {
     blockchain.addBlock({ data: newData });
     expect(blockchain.chain[blockchain.chain.length - 1].data).toEqual(newData);
   });
+
   describe("isValidChain()", () => {
-    describe("when chain dosnt start with genesis block", () => {
+    describe("when the chain does not start with the genesis block", () => {
       it("returns false", () => {
         blockchain.chain[0] = { data: "fake-genesis" };
         expect(Blockchain.isValidChain(blockchain.chain)).toBe(false);
       });
     });
 
-    describe("when chain does start with genesis block and has multiple blocks", () => {
+    describe("when the chain does start with the genesis block and has multiple blocks", () => {
       beforeEach(() => {
         blockchain.addBlock({ data: "one" });
         blockchain.addBlock({ data: "two" });
         blockchain.addBlock({ data: "three" });
       });
-      describe("and a lastHash refrence has changed", () => {
+
+      describe("and a lastHash refrenece has changed", () => {
         it("returns false", () => {
           blockchain.chain[2].lastHash = "broken-lastHash";
           expect(Blockchain.isValidChain(blockchain.chain)).toBe(false);
         });
       });
+
       describe("and the chain contains a block with an invalid field", () => {
         it("returns false", () => {
           blockchain.chain[2].data = "changed-data";
           expect(Blockchain.isValidChain(blockchain.chain)).toBe(false);
         });
       });
-      describe("and the chain does not contains any invalid blocks", () => {
+
+      describe("and the chain does not contain any invalid blocks", () => {
         it("returns true", () => {
-          blockchain = new Blockchain();
           expect(Blockchain.isValidChain(blockchain.chain)).toBe(true);
         });
       });
-    });
-    describe("and the chain contains a block with a  jump difficulty", () => {
-      it("return false ", () => {
-        const lastBlock = blockchain.chain(blockchain.chain.length - 1);
-        const lastHash = lastBlock.hash;
-        const timestamp = Date.now();
-        const nonce = 0;
-        const data = [];
-        const difficulty = lastBlock.difficulty - 3;
-        const hash = cryptoHash(timestamp, difficulty, nonce, data, lastHash);
-        const badBlock = new Block({
-          timestamp,
-          lastHash,
-          hash,
-          nonce,
-          difficulty,
-        });
-        blockchain.chain.push(badBlock);
-        expect(blockchain.isValidChain(blockchain.chain)).toBe(false);
-      });
+
+      describe('and the chain contains a block with a jumped difficulty', ()=>{
+        it('returns false', ()=>{
+          const lastBlock = blockchain.chain[blockchain.chain.length - 1];
+          const lastHash = lastBlock.hash;
+          const timestamp = Date.now();
+          const nonce = 0;
+          const data = [];
+          const difficulty = lastBlock.difficulty - 3;
+          const hash = cryptoHash(timestamp, lastHash, difficulty, nonce, data);
+
+          const badBlock = new Block({
+            timestamp, lastHash, hash, nonce, difficulty, data
+          });
+
+          blockchain.chain.push(badBlock);
+
+          expect(Blockchain.isValidChain(blockchain.chain)).toBe(false);
+        })
+      })
     });
   });
 
   describe("replaceChain()", () => {
+
     let errorMock, logMock;
 
-    beforeEach(() => {
+    beforeEach(()=>{
       errorMock = jest.fn();
       logMock = jest.fn();
 
@@ -89,11 +92,13 @@ describe("blockchain", () => {
       global.console.log = logMock;
     });
 
+
     describe("when the new chain is not longer", () => {
-      beforeEach(() => {
-        newChain[0] = { new: "chain" };
+
+      beforeEach(()=>{
+        newChain[0] = {new: 'chain'};
         blockchain.replaceChain(newChain.chain);
-      });
+      })
       it("does not replace the chain", () => {
         expect(blockchain.chain).toEqual(originalChain);
       });
@@ -104,6 +109,7 @@ describe("blockchain", () => {
     });
 
     describe("when the new chain is longer", () => {
+
       beforeEach(() => {
         newChain.addBlock({ data: "one" });
         newChain.addBlock({ data: "two" });
@@ -111,10 +117,11 @@ describe("blockchain", () => {
       });
 
       describe("and the chain is invalid", () => {
-        beforeEach(() => {
-          newChain.chain[2].hash = "fake-hash";
+
+        beforeEach(()=>{
+          newChain.chain[2].hash = 'fake-hash';
           blockchain.replaceChain(newChain.chain);
-        });
+        })
         it("does not replace the chain", () => {
           expect(blockchain.chain).toEqual(originalChain);
         });
@@ -124,11 +131,11 @@ describe("blockchain", () => {
         });
       });
       describe("and the chain is valid", () => {
-        beforeEach(() => {
+        beforeEach(()=>{
           blockchain.replaceChain(newChain.chain);
-        });
+        })
 
-        it("does replace the chain", () => {
+        it('does replace the chain', ()=>{
           expect(blockchain.chain).toEqual(newChain.chain);
         });
 

@@ -1,5 +1,5 @@
 {
-  "name": "blockchain",
+  "name": "cryptochain",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -12,12 +12,16 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "jest": "^29.7.0"
+    "jest": "^27.3.1"
   },
   "dependencies": {
-    "@types/jest": "^29.5.14",
-    "express": "^4.21.2",
+    "@types/jest": "^27.0.2",
+    "axios": "^0.23.0",
+    "elliptic": "^6.5.4",
+    "express": "^4.17.1",
     "hex-to-binary": "^1.0.1",
-    "redis": "^4.7.0"
+    "redis": "^3.1.2",
+    "tcp-port-used": "^1.0.2",
+    "uuid": "^8.3.2"
   }
 }
