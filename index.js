@@ -6,14 +6,17 @@ const Wallet = require("./wallet");
 const TransactionMiner = require("./app/transaction-miner");
 const tcpPortUsed = require("tcp-port-used");
 const axios = require("axios");
+const path = require("path");
 
 const app = express();
+app.use(express.static("./client/dist"));
 app.use(express.json());
 
 const blockchain = new Blockchain();
 const transactionPool = new TransactionPool();
 const wallet = new Wallet();
 const pubsub = new Pubsub({ blockchain, transactionPool });
+
 const transactionMiner = new TransactionMiner({
   blockchain,
   transactionPool,
@@ -25,9 +28,22 @@ const transactionMiner = new TransactionMiner({
 //   pubsub.broadcastChain();
 // }, 1000);
 
+
+
 app.get("/api/blocks", (req, res) => {
   res.json(blockchain.chain);
 });
+
+app.get("/api/wallet-info", (req, res) => {
+  res.json({
+    address: wallet.publicKey,
+    balance: Wallet.calculateBalance({
+      chain: blockchain.chain,
+      address: wallet.publicKey,
+    }),
+  });
+});
+
 app.get("/api/mine-transactions", (req, res) => {
   transactionMiner.mineTransactions();
   res.redirect("/api/blocks");
@@ -57,6 +73,7 @@ app.post("/api/transact", (req, res) => {
   // console.log("transactionPool", transactionPool);
   res.json({ transaction });
 });
+
 app.post("/api/mine", (req, res) => {
   const { data } = req.body;
 
@@ -65,6 +82,59 @@ app.post("/api/mine", (req, res) => {
   res.redirect("/api/blocks");
 });
 
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "./client/dist/index.html"));
+});
+
+const walletFoo = new Wallet();
+const walletBar = new Wallet();
+
+const generateWalletTransaction = ({ wallet, recipient, amount }) => {
+  const transaction = wallet.createTransaction({
+    recipient,
+    amount,
+    chain: blockchain.chain,
+  });
+
+  transactionPool.setTransaction(transaction);
+};
+
+const walletAction = () =>
+  generateWalletTransaction({
+    wallet,
+    recipient: walletFoo.publicKey,
+    amount: 5,
+  });
+
+const walletFooAction = () =>
+  generateWalletTransaction({
+    wallet: walletFoo,
+    recipient: walletBar.publicKey,
+    amount: 10,
+  });
+
+const walletBarAction = () =>
+  generateWalletTransaction({
+    wallet: walletBar,
+    recipient: wallet.publicKey,
+    amount: 15,
+  });
+
+// for(let i=0;i<10;i++){
+//   if(i%3 === 0){
+//     walletAction();
+//     walletFooAction();
+//   }else if(i%3 === 1){
+//     walletAction();
+//     walletBarAction();
+//   }else{
+//     walletFooAction();
+//     walletBarAction();
+//   }
+
+//   transactionMiner.mineTransactions();
+
+// }
 const rootPort = 3000;
 let PORT = 3000;
 
@@ -78,7 +148,7 @@ const syncOnConnect = async () => {
   transactionPool.setMap(response.data);
 };
 
-tcpPortUsed.check(3000, "127.0.0.1").then(function (inUse) {
+tcpPortUsed.check(3000, "127.0.0.1").then(function(inUse) {
   if (inUse) {
     PORT += Math.ceil(Math.random() * 1000);
   }
